@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StoreVix — Online Marketplace Pakistan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#F85606',
+              dark: '#D04200',
+              light: '#FFF0E8',
+              soft: '#FFE4D6'
+            },
+            surface: {
+              bg: '#F5F5F5',
+              card: '#FFFFFF'
+            },
+            ink: {
+              primary: '#212121',
+              muted: '#757575'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      background-color: #F5F5F5;
+      color: #212121;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .product-card:hover .card-hover-cta {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .card-hover-cta {
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.2s ease;
+    }
+    @media (hover: none) {
+      .card-hover-cta {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- 1. TOP UTILITY BAR -->
+  <div class="bg-[#EFEFEF] border-b border-gray-200 text-[11px] sm:text-xs text-ink-muted">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-8 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3 sm:gap-5 overflow-x-auto no-scrollbar whitespace-nowrap">
+        <button onclick="openAppModal()" class="hover:text-brand font-medium text-brand flex items-center gap-1 transition">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <span data-label="topAppText">Save More on App</span>
+        </button>
+        <button onclick="switchPage('sell')" class="hover:text-brand transition" data-label="topSellText">Sell on StoreVix</button>
+        <button onclick="switchPage('contact')" class="hover:text-brand transition" data-label="topHelpText">Help &amp; Support</button>
+        <button onclick="switchPage('track')" class="hover:text-brand transition flex items-center gap-1">
+          <i class="fa-solid fa-box-open text-[10px]"></i>
+          <span data-label="topTrackText">Track Order</span>
+        </button>
+      </div>
+      <div id="authHeaderSlot" class="flex items-center gap-3 whitespace-nowrap">
+        <button onclick="openAuthModal('login')" class="hover:text-brand font-medium transition">LOGIN</button>
+        <span class="text-gray-300">|</span>
+        <button onclick="openAuthModal('signup')" class="hover:text-brand font-medium transition">SIGN UP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MAIN STICKY HEADER -->
+  <header class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-3 sm:gap-6">
+      <!-- Brand Logo + Mobile Category Toggle -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <button onclick="toggleMobileCatDrawer()" class="lg:hidden p-2 rounded-lg text-ink-primary hover:bg-brand-light hover:text-brand transition" aria-label="Categories">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <a href="javascript:void(0)" onclick="switchPage('home')" class="flex items-center gap-2 group">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand flex items-center justify-center text-white font-extrabold text-xl shadow-sm group-hover:bg-brand-dark transition">
+            S
+          </div>
+          <div class="leading-tight">
+            <span class="text-xl sm:text-2xl font-extrabold tracking-tight text-brand" data-label="brandName">StoreVix</span>
+            <span class="hidden sm:block text-[10px] font-semibold tracking-wider uppercase text-ink-muted" data-label="brandTagline">Baddomalhi • Pakistan</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Real-Time Search Bar -->
+      <div class="flex-1 max-w-2xl">
+        <form onsubmit="event.preventDefault(); applyFilters();" class="relative flex items-center bg-[#F2F2F2] rounded-lg border-2 border-transparent focus-within:border-brand focus-within:bg-white transition overflow-hidden">
+          <input
+            id="searchInput"
+            type="text"
+            oninput="applyFilters()"
+            placeholder="Search products, categories, or brands in StoreVix..."
+            class="w-full bg-transparent px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-ink-primary placeholder-ink-muted focus:outline-none"
+          />
+          <button id="clearSearchBtn" type="button" onclick="clearSearch()" class="hidden px-2 text-ink-muted hover:text-ink-primary">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <button type="submit" class="bg-brand hover:bg-brand-dark text-white px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition shrink-0">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="hidden md:inline">Search</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Right Nav Quick Links + Cart Button -->
+      <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+        <nav class="hidden xl:flex items-center gap-4 text-xs font-semibold text-ink-primary">
+          <button onclick="switchPage('home')" class="nav-pill hover:text-brand transition">Store</button>
+          <button onclick="switchPage('blog')" class="nav-pill hover:text-brand transition">Blog</button>
+          <button onclick="switchPage('about')" class="nav-pill hover:text-brand transition">About</button>
+          <button onclick="switchPage('contact')" class="nav-pill hover:text-brand transition">Contact</button>
+        </nav>
+
+        <button onclick="openCartDrawer()" class="relative p-2 sm:p-2.5 rounded-xl hover:bg-brand-light text-ink-primary hover:text-brand transition group" aria-label="Shopping Cart">
+          <i class="fa-solid fa-cart-shopping text-xl sm:text-2xl"></i>
+          <span id="cartBadge" class="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 px-1 rounded-full bg-brand text-white text-[11px] font-bold flex items-center justify-center shadow">
+            0
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Secondary Navigation Strip for Tablet/Mobile & Sub-pages -->
+    <div class="xl:hidden border-t border-gray-100 bg-white px-3 sm:px-6 py-1.5 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-xs font-medium">
+      <div class="flex items-center gap-4 whitespace-nowrap">
+        <button onclick="switchPage('home')" class="hover:text-brand transition">Home Store</button>
+        <button onclick="switchPage('blog')" class="hover:text-brand transition">StoreVix Blog</button>
+        <button onclick="switchPage('about')" class="hover:text-brand transition">About Us</button>
+        <button onclick="switchPage('contact')" class="hover:text-brand transition">Contact Us</button>
+        <button onclick="switchPage('track')" class="hover:text-brand transition">Track Order</button>
+      </div>
+      <span id="promoBannerHint" class="hidden sm:inline text-[11px] text-brand font-semibold whitespace-nowrap"></span>
+    </div>
+  </header>
+
+  <!-- Active Page Banner when viewing About / Contact / Blog / Track / Sell -->
+  <div id="subpageBreadcrumbBar" class="hidden bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2 text-ink-muted">
+        <button onclick="switchPage('home')" class="hover:text-brand font-semibold text-ink-primary flex items-center gap-1">
+          <i class="fa-solid fa-house"></i> Home
+        </button>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <span id="breadcrumbCurrentTitle" class="text-brand font-semibold">Page</span>
+      </div>
+      <button onclick="switchPage('home')" class="text-brand hover:underline font-semibold">
+        ← Back to Storefront
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN STOREFRONT VIEW ==================== -->
+  <main id="homeView" class="flex-1">
+
+    <!-- 3. HERO SECTION (25% Sidebar + 75% Slider on Desktop) -->
+    <section class="max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+        <!-- Left Category Sidebar (3 of 12 cols = 25% on desktop) -->
+        <aside class="hidden lg:block lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 py-2 overflow-hidden">
+          <div class="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-muted flex items-center justify-between">
+            <span>Categories</span>
+            <span class="text-brand text-[10px]">StoreVix</span>
+          </div>
+          <ul id="desktopCategoryList" class="divide-y divide-gray-50 text-xs font-medium text-ink-primary">
+            <!-- Populated by JS -->
+          </ul>
+        </aside>
+
+        <!-- Right Promotional Banner Slider (9 of 12 cols = 75% on desktop) -->
+        <div class="lg:col-span-9 relative rounded-xl overflow-hidden shadow-sm bg-gray-900 h-52 sm:h-72 md:h-80 lg:h-[360px] group">
+          <div id="heroSlidesTrack" class="w-full h-full relative">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Prev / Next Buttons -->
+          <button onclick="prevSlide()" aria-label="Previous slide" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-brand text-white flex items-center justify-center backdrop-blur-xs transition opacity-80 group-hover:opacity-100">
+            <i class="fa-solid fa-chevron-left text-sm"></i>
+          </button>
+          <button onclick="nextSlide()" aria-label="Next slide" class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-brand text-white flex items-center justify-center backdrop-blur-xs transition opacity-80 group-hover:opacity-100">
+            <i class="fa-solid fa-chevron-right text-sm"></i>
+          </button>
+
+          <!-- Dots Indicator -->
+          <div id="heroDots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10"></div>
+        </div>
+      </div>
+
+      <!-- Mobile Horizontal Category Pills -->
+      <div class="lg:hidden mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="mobileCategoryPills"></div>
+    </section>
+
+    <!-- Trust & Feature Strip -->
+    <section class="max-w-7xl mx-auto px-3 sm:px-6 mt-4">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <p class="font-bold text-ink-primary">100% Genuine</p>
+            <p class="text-[11px] text-ink-muted">Verified StoreVix items</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-truck-fast"></i>
+          </div>
+          <div>
+            <p class="font-bold text-ink-primary">Nationwide Delivery</p>
+            <p id="freeShippingStripText" class="text-[11px] text-ink-muted">Free above Rs. 2,000</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div>
+            <p class="font-bold text-ink-primary">COD &amp; Mobile Pay</p>
+            <p class="text-[11px] text-ink-muted">EasyPaisa • JazzCash</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center shrink-0">
+            <i class="fa-brands fa-whatsapp"></i>
+          </div>
+          <div>
+            <p class="font-bold text-ink-primary">WhatsApp Support</p>
+            <p class="text-[11px] text-ink-muted">0349-0832576</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. FLASH SALE SECTION -->
+    <section id="flashSaleSection" class="max-w-7xl mx-auto px-3 sm:px-6 mt-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Flash Sale Header -->
+        <div class="px-4 sm:px-6 py-3.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-brand-light via-white to-white">
+          <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+            <h2 class="text-lg sm:text-xl font-extrabold text-brand flex items-center gap-2">
+              <i class="fa-solid fa-bolt"></i>
+              <span data-label="flashSaleTitle">Flash Sale</span>
+            </h2>
+            <span class="px-2.5 py-0.5 rounded-full bg-brand text-white text-[11px] font-bold uppercase tracking-wide animate-pulse" data-label="flashSaleBadge">
+              On Sale Now
+            </span>
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-ink-primary">
+              <span class="text-ink-muted hidden sm:inline">Ending in</span>
+              <span id="cdHours" class="bg-brand text-white font-bold px-2 py-1 rounded text-xs min-w-[28px] text-center">04</span>
+              <span class="text-brand font-bold">:</span>
+              <span id="cdMinutes" class="bg-brand text-white font-bold px-2 py-1 rounded text-xs min-w-[28px] text-center">28</span>
+              <span class="text-brand font-bold">:</span>
+              <span id="cdSeconds" class="bg-brand text-white font-bold px-2 py-1 rounded text-xs min-w-[28px] text-center">15</span>
+            </div>
+          </div>
+
+          <button onclick="scrollToProducts()" class="px-3.5 py-1.5 rounded-lg border border-brand text-brand hover:bg-brand hover:text-white text-xs font-bold transition">
+            Shop All Products
+          </button>
+        </div>
+
+        <!-- 6 Flash Sale Product Cards -->
+        <div id="flashSaleGrid" class="p-3 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CATEGORIES GRID (2 Rows x 6 Cols = 12 Square Category Cards) -->
+    <section id="categoriesSection" class="max-w-7xl mx-auto px-3 sm:px-6 mt-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base sm:text-lg font-extrabold text-ink-primary flex items-center gap-2">
+            <span class="w-1.5 h-5 rounded-full bg-brand inline-block"></span>
+            <span data-label="categoriesHeading">Categories</span>
+          </h2>
+          <button id="resetCategoryBtn" onclick="selectCategory('All')" class="hidden text-xs font-semibold text-brand hover:underline">
+            Clear Filter
+          </button>
+        </div>
+
+        <div id="categoriesGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 sm:gap-3.5">
+          <!-- 12 Square Category Cards populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. "JUST FOR YOU" PRODUCT FEED -->
+    <section id="justForYouSection" class="max-w-7xl mx-auto px-3 sm:px-6 mt-6 mb-10">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3.5">
+        <div class="flex items-center gap-2.5">
+          <h2 class="text-base sm:text-xl font-extrabold text-ink-primary" data-label="justForYouTitle">Just For You</h2>
+          <span id="activeFilterBadge" class="hidden px-2.5 py-0.5 rounded-full bg-brand-light text-brand text-xs font-bold"></span>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-ink-muted hidden sm:inline">Sort by:</span>
+          <select id="sortSelect" onchange="applyFilters()" class="bg-white border border-gray-200 rounded-lg px-3 py-1.5 font-medium text-ink-primary focus:outline-none focus:border-brand">
+            <option value="featured">Recommended</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Product Grid -->
+      <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Empty Search / Filter State -->
+      <div id="emptyProductsState" class="hidden bg-white rounded-xl border border-gray-100 p-10 text-center mt-4">
+        <div class="w-14 h-14 rounded-full bg-brand-light text-brand flex items-center justify-center mx-auto mb-3 text-2xl">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
+        <h3 class="text-base font-bold text-ink-primary mb-1">No matching products found</h3>
+        <p class="text-xs text-ink-muted mb-4">Try a different keyword or reset the selected category.</p>
+        <button onclick="resetAllFilters()" class="px-5 py-2 rounded-lg bg-brand hover:bg-brand-dark text-white text-xs font-bold transition">
+          Show All Products
+        </button>
+      </div>
+
+      <!-- Load More Button -->
+      <div id="loadMoreWrapper" class="mt-7 text-center">
+        <button id="loadMoreBtn" onclick="loadMoreProducts()" class="px-8 py-2.5 rounded-lg border-2 border-brand text-brand hover:bg-brand hover:text-white font-bold text-xs sm:text-sm transition shadow-xs">
+          Load More Products
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== DYNAMIC SUB-PAGES VIEW (About, Contact, Blog, Track, Sell) ==================== -->
+  <section id="subpageView" class="hidden flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6">
+    <div id="subpageContent"></div>
+  </section>
+
+  <!-- 8. FOOTER -->
+  <footer class="bg-white border-t border-gray-200 mt-auto">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-xs">
+      <!-- Column 1: Customer Care -->
+      <div>
+        <h4 class="font-extrabold text-sm text-brand uppercase tracking-wide mb-3.5">Customer Care</h4>
+        <ul class="space-y-2 text-ink-muted">
+          <li><button onclick="switchPage('contact')" class="hover:text-brand transition">Help Center &amp; Support</button></li>
+          <li><button onclick="switchPage('track')" class="hover:text-brand transition">Track Your Order</button></li>
+          <li><button onclick="switchPage('contact')" class="hover:text-brand transition">Returns &amp; Refunds Policy</button></li>
+          <li><a href="https://wa.me/923490832576" target="_blank" rel="noopener" class="hover:text-brand transition inline-flex items-center gap-1.5">
+            <i class="fa-brands fa-whatsapp text-green-600 text-sm"></i> WhatsApp: 0349-0832576
+          </a></li>
+          <li class="pt-1 text-[11px] text-ink-muted">Email: <span class="font-medium text-ink-primary">contac.storevix@gmail.com</span></li>
+        </ul>
+      </div>
+
+      <!-- Column 2: StoreVix -->
+      <div>
+        <h4 class="font-extrabold text-sm text-ink-primary uppercase tracking-wide mb-3.5">StoreVix</h4>
+        <ul class="space-y-2 text-ink-muted">
+          <li><button onclick="switchPage('about')" class="hover:text-brand transition">About StoreVix</button></li>
+          <li><button onclick="switchPage('blog')" class="hover:text-brand transition">StoreVix Blog &amp; Guides</button></li>
+          <li><button onclick="switchPage('sell')" class="hover:text-brand transition">Sell on StoreVix</button></li>
+          <li><button onclick="switchPage('about')" class="hover:text-brand transition">Privacy &amp; Terms</button></li>
+          <li class="pt-1 text-[11px] text-ink-muted">Location: <span class="font-medium text-ink-primary">Baddomalhi, Pakistan</span></li>
+        </ul>
+      </div>
+
+      <!-- Column 3: Payment Methods -->
+      <div>
+        <h4 class="font-extrabold text-sm text-ink-primary uppercase tracking-wide mb-3.5">Payment Methods</h4>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 font-bold text-[11px] text-ink-primary flex items-center gap-1.5">
+            <i class="fa-solid fa-money-bill-wave text-green-600"></i> Cash on Delivery
+          </span>
+          <span class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 font-bold text-[11px] text-blue-800">
+            VISA
+          </span>
+          <span class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 font-bold text-[11px] text-red-600">
+            Mastercard
+          </span>
+          <span class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-emerald-50 font-bold text-[11px] text-emerald-700">
+            EasyPaisa
+          </span>
+          <span class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-rose-50 font-bold text-[11px] text-rose-700">
+            JazzCash
+          </span>
+        </div>
+        <div class="p-2.5 rounded-lg bg-brand-light/70 border border-brand/20 text-[11px] text-ink-primary">
+          <p class="font-bold text-brand mb-0.5">Mobile Wallet Details:</p>
+          <p>Title: <span class="font-semibold">Ghazala Zulfiqar</span></p>
+          <p>No: <span class="font-semibold">0325-4331718</span></p>
+        </div>
+      </div>
+
+      <!-- Column 4: Get the App -->
+      <div>
+        <h4 class="font-extrabold text-sm text-ink-primary uppercase tracking-wide mb-3.5">Download StoreVix App</h4>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-11 h-11 rounded-xl bg-brand text-white flex items-center justify-center text-xl font-extrabold shadow-xs shrink-0">
+            S
+          </div>
+          <div>
+            <p class="font-extrabold text-brand text-sm" data-label="appBoxTitle">StoreVix Mobile App</p>
+            <p class="text-[11px] text-ink-muted" data-label="appBoxSubtitle">Exclusive app deals &amp; fast orders</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <a id="apkpureFooterLink" href="javascript:void(0)" onclick="handleAppDownloadClick('APKPure')" class="px-3 py-2 rounded-lg bg-gray-900 hover:bg-brand text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-download"></i> APKPure
+          </a>
+          <a id="uptodownFooterLink" href="javascript:void(0)" onclick="handleAppDownloadClick('Uptodown')" class="px-3 py-2 rounded-lg bg-gray-900 hover:bg-brand text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-android fa-brands"></i> Uptodown
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-[#F5F5F5] border-t border-gray-200 py-4 px-3 sm:px-6">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-ink-muted">
+        <p>© 2026 <strong class="text-ink-primary">StoreVix</strong>. All rights reserved. Operating from Baddomalhi, Pakistan.</p>
+        <p class="text-center sm:text-right">
+          Sample catalog items displayed for demo/preview — manage products, prices, links &amp; labels via Firebase Admin.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MOBILE CATEGORY DRAWER ==================== -->
+  <div id="mobileCatDrawerBackdrop" onclick="toggleMobileCatDrawer()" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs"></div>
+  <aside id="mobileCatDrawer" class="hidden fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col">
+    <div class="p-4 bg-brand text-white flex items-center justify-between">
+      <span class="font-extrabold text-base flex items-center gap-2">
+        <i class="fa-solid fa-layer-group"></i> StoreVix Categories
+      </span>
+      <button onclick="toggleMobileCatDrawer()" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+    <ul id="mobileCategoryList" class="flex-1 overflow-y-auto divide-y divide-gray-100 text-sm font-medium text-ink-primary"></ul>
+  </aside>
+
+  <!-- ==================== 7A. PRODUCT QUICK-VIEW / DETAIL MODAL ==================== -->
+  <div id="productModalBackdrop" onclick="closeProductModal()" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden my-auto border border-gray-100">
+      <div class="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-gray-100 bg-gray-50/70">
+        <span id="modalCategoryTag" class="text-xs font-bold uppercase tracking-wider text-brand">Category</span>
+        <button onclick="closeProductModal()" class="w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center text-ink-muted hover:text-ink-primary transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 sm:p-6">
+        <!-- Image Box -->
+        <div class="relative rounded-xl bg-[#F9F9F9] border border-gray-100 flex items-center justify-center p-4 h-72 sm:h-88">
+          <img id="modalImg" src="" alt="" class="max-h-full max-w-full object-contain rounded-lg" />
+          <span id="modalDiscountBadge" class="hidden absolute top-3 left-3 bg-brand text-white text-xs font-extrabold px-2.5 py-1 rounded-md shadow">
+            -25%
+          </span>
+        </div>
+
+        <!-- Details Box -->
+        <div class="flex flex-col justify-between">
+          <div>
+            <h2 id="modalTitle" class="text-lg sm:text-xl font-extrabold text-ink-primary leading-snug mb-2"></h2>
+            <div class="flex items-center gap-3 text-xs mb-4">
+              <span id="modalRatingBadge" class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-md border border-amber-200">
+                <i class="fa-solid fa-star text-amber-500"></i> 4.8/5
+              </span>
+              <span id="modalReviewsText" class="text-ink-muted">(120 reviews)</span>
+              <span class="text-emerald-600 font-semibold">• In Stock</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-brand-light border border-brand/20 mb-4">
+              <div class="flex items-baseline gap-3">
+                <span id="modalPrice" class="text-2xl sm:text-3xl font-extrabold text-brand">Rs. 0</span>
+                <span id="modalOldPrice" class="text-sm text-ink-muted line-through"></span>
+              </div>
+              <p class="text-[11px] text-ink-muted mt-1">Cash on Delivery, EasyPaisa &amp; JazzCash available</p>
+            </div>
+
+            <p id="modalDescription" class="text-xs sm:text-sm text-ink-muted leading-relaxed mb-4"></p>
+
+            <!-- Optional Admin Direct Product Link -->
+            <div id="modalDirectLinkBox" class="hidden mb-4 p-2.5 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-between gap-2 text-xs">
+              <span class="text-blue-900 font-semibold flex items-center gap-1.5">
+                <i class="fa-solid fa-link"></i> Special Product / Offer Link
+              </span>
+              <a id="modalDirectLinkAnchor" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition">
+                Open Link <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
+              </a>
+            </div>
+
+            <!-- Quantity Selector -->
+            <div class="flex items-center gap-4 mb-5">
+              <span class="text-xs font-bold text-ink-primary">Quantity:</span>
+              <div class="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <button onclick="changeModalQty(-1)" class="px-3 py-1.5 hover:bg-gray-100 text-ink-primary font-bold">-</button>
+                <input id="modalQtyInput" type="number" value="1" min="1" max="50" onchange="sanitizeModalQty()" class="w-12 text-center text-xs sm:text-sm font-bold focus:outline-none" />
+                <button onclick="changeModalQty(1)" class="px-3 py-1.5 hover:bg-gray-100 text-ink-primary font-bold">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button onclick="addModalProductToCart(false)" class="py-3 px-4 rounded-xl border-2 border-brand text-brand hover:bg-brand-light font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
+              <i class="fa-solid fa-cart-plus"></i> Add to Cart
+            </button>
+            <button onclick="addModalProductToCart(true)" class="py-3 px-4 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition">
+              <i class="fa-solid fa-bolt"></i> Buy Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 7B. SLIDE-OVER CART & CHECKOUT DRAWER ==================== -->
+  <div id="cartDrawerBackdrop" onclick="closeCartDrawer()" class="hidden fixed inset-0 z-50 bg-black/55 backdrop-blur-2xs"></div>
+  <aside id="cartDrawer" class="hidden fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
+    <!-- Cart Header -->
+    <div class="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-brand text-white">
+      <div class="flex items-center gap-2.5">
+        <i class="fa-solid fa-cart-shopping text-lg"></i>
+        <h3 class="font-extrabold text-base">Your Cart (<span id="drawerItemCount">0</span>)</h3>
+      </div>
+      <button onclick="closeCartDrawer()" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Free Shipping Progress Bar -->
+    <div class="px-4 sm:px-5 py-2.5 bg-brand-light border-b border-brand/15 text-xs">
+      <p id="freeShippingProgressText" class="font-semibold text-ink-primary mb-1.5">Add items worth Rs. 2,000 for FREE Delivery</p>
+      <div class="w-full h-2 bg-white rounded-full overflow-hidden">
+        <div id="freeShippingBar" class="h-full bg-brand transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Cart Items List -->
+    <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+    <!-- Checkout Form View (toggled when user clicks Proceed to Checkout) -->
+    <div id="checkoutFormPanel" class="hidden border-t border-gray-200 bg-gray-50 p-4 space-y-3 max-h-[62vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h4 class="font-extrabold text-sm text-ink-primary flex items-center gap-1.5">
+          <i class="fa-solid fa-truck text-brand"></i> Delivery Details
+        </h4>
+        <button onclick="toggleCheckoutPanel(false)" class="text-xs text-brand font-semibold hover:underline">Back to Summary</button>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-ink-primary mb-1">Full Name *</label>
+        <input id="custName" type="text" placeholder="e.g. Muhammad Ali" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-brand" />
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-ink-primary mb-1">Phone / WhatsApp Number *</label>
+        <input id="custPhone" type="tel" placeholder="e.g. 0300-1234567" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-brand" />
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-ink-primary mb-1">Complete Delivery Address *</label>
+        <textarea id="custAddress" rows="2" placeholder="House/Street, Mohalla, City (e.g. Baddomalhi, Narowal)" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-brand"></textarea>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-ink-primary mb-1">Payment Method</label>
+        <select id="custPayment" onchange="toggleWalletNote()" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-medium focus:outline-none focus:border-brand">
+          <option value="Cash on Delivery">Cash on Delivery (COD)</option>
+          <option value="EasyPaisa">EasyPaisa (Ghazala Zulfiqar - 03254331718)</option>
+          <option value="JazzCash">JazzCash (Ghazala Zulfiqar - 03254331718)</option>
+        </select>
+        <p id="walletPaymentHint" class="hidden mt-1.5 p-2 rounded bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900">
+          Send payment to <strong>Ghazala Zulfiqar</strong> (<strong>0325-4331718</strong>) and share transaction reference on WhatsApp <strong>0349-0832576</strong>.
+        </p>
+      </div>
+
+      <button onclick="confirmCheckoutOrder()" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-white font-extrabold text-xs sm:text-sm shadow transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-check-circle"></i> Place Order Now
+      </button>
+    </div>
+
+    <!-- Cart Footer Summary -->
+    <div id="cartSummaryFooter" class="border-t border-gray-200 p-4 sm:p-5 bg-white space-y-3">
+      <!-- Promo Code Row -->
+      <div class="flex gap-2">
+        <input id="promoCodeInput" type="text" placeholder="Promo code (e.g. STOREVIX10)" class="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-xs uppercase focus:outline-none focus:border-brand" />
+        <button onclick="applyPromoCode()" class="px-3.5 py-2 rounded-lg bg-gray-900 hover:bg-brand text-white text-xs font-bold transition">
+          Apply
+        </button>
+      </div>
+      <p id="promoFeedback" class="hidden text-[11px] font-semibold"></p>
+
+      <div class="space-y-1.5 text-xs">
+        <div class="flex justify-between text-ink-muted">
+          <span>Subtotal</span>
+          <span id="cartSubtotal" class="font-semibold text-ink-primary">Rs. 0</span>
+        </div>
+        <div id="discountRow" class="hidden flex justify-between text-emerald-600 font-semibold">
+          <span>Promo Discount</span>
+          <span id="cartDiscount">- Rs. 0</span>
+        </div>
+        <div class="flex justify-between text-ink-muted">
+          <span>Delivery Fee</span>
+          <span id="cartDeliveryFee" class="font-semibold text-ink-primary">Rs. 200</span>
+        </div>
+        <div class="flex justify-between text-sm sm:text-base font-extrabold text-ink-primary pt-2 border-t border-gray-100">
+          <span>Total Bill</span>
+          <span id="cartTotal" class="text-brand">Rs. 0</span>
+        </div>
+      </div>
+
+      <button id="proceedCheckoutBtn" onclick="toggleCheckoutPanel(true)" disabled class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-extrabold text-xs sm:text-sm transition shadow-sm">
+        Proceed to Checkout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== ORDER CONFIRMATION MODAL ==================== -->
+  <div id="orderConfirmModal" onclick="closeOrderConfirmModal()" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-md w-full p-6 text-center shadow-2xl border border-gray-100">
+      <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3 text-2xl">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3 class="text-lg font-extrabold text-ink-primary mb-1">Order Confirmed!</h3>
+      <p class="text-xs text-ink-muted mb-4">Thank you for shopping at StoreVix. Your order details have been recorded.</p>
+
+      <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-left text-xs space-y-1.5 mb-4">
+        <div class="flex justify-between">
+          <span class="text-ink-muted">Tracking ID:</span>
+          <span id="confirmedOrderId" class="font-extrabold text-brand">SVX-0000</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-ink-muted">Customer:</span>
+          <span id="confirmedCustomer" class="font-semibold text-ink-primary">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-ink-muted">Payment:</span>
+          <span id="confirmedPayment" class="font-semibold text-ink-primary">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-ink-muted">Total Payable:</span>
+          <span id="confirmedTotal" class="font-extrabold text-ink-primary">Rs. 0</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <a id="whatsappOrderShareBtn" href="#" target="_blank" rel="noopener" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
+          <i class="fa-brands fa-whatsapp text-base"></i> Send Order on WhatsApp (0349-0832576)
+        </a>
+        <button onclick="closeOrderConfirmModal()" class="w-full py-2.5 rounded-xl border border-gray-300 hover:bg-gray-50 text-ink-primary font-bold text-xs transition">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== AUTH MODAL (Google + Email/Password) ==================== -->
+  <div id="authModal" onclick="closeAuthModal()" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="authModalTitle" class="text-base font-extrabold text-ink-primary">Login to StoreVix</h3>
+        <button onclick="closeAuthModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-ink-muted">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Sign in with Google -->
+      <button onclick="signInWithGoogle()" class="w-full py-2.5 px-4 rounded-xl border border-gray-300 hover:bg-gray-50 font-bold text-xs text-ink-primary flex items-center justify-center gap-2.5 transition mb-4">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-4 h-4" />
+        <span>Continue with Google</span>
+      </button>
+
+      <div class="relative flex items-center justify-center my-3">
+        <div class="border-t border-gray-200 w-full"></div>
+        <span class="bg-white px-2.5 text-[11px] text-ink-muted uppercase">or</span>
+        <div class="border-t border-gray-200 w-full"></div>
+      </div>
+
+      <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-ink-primary mb-1">Email Address</label>
+          <input id="authEmail" type="email" required placeholder="you@example.com" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-brand" />
+        </div>
+        <div>
+          <label class="block font-bold text-ink-primary mb-1">Password</label>
+          <input id="authPassword" type="password" required minlength="6" placeholder="Minimum 6 characters" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-brand" />
+        </div>
+        <button id="authSubmitBtn" type="submit" class="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-white font-extrabold transition">
+          Login
+        </button>
+      </form>
+
+      <div class="mt-4 text-center text-xs text-ink-muted">
+        <span id="authSwitchText">New to StoreVix?</span>
+        <button id="authSwitchBtn" onclick="toggleAuthMode()" class="text-brand font-bold hover:underline ml-1">Create Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APP DOWNLOAD INFO MODAL ==================== -->
+  <div id="appDownloadModal" onclick="closeAppModal()" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center font-extrabold text-lg">S</div>
+          <div>
+            <h3 class="font-extrabold text-base text-ink-primary">StoreVix Android App</h3>
+            <p class="text-[11px] text-ink-muted">Fast shopping &amp; instant notifications</p>
+          </div>
+        </div>
+        <button onclick="closeAppModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-ink-muted">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <p class="text-xs text-ink-muted leading-relaxed mb-4">
+        Download the official StoreVix APK from our trusted mirror partners below (links can be updated anytime from your Admin Panel):
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a id="modalApkpureBtn" href="javascript:void(0)" onclick="handleAppDownloadClick('APKPure')" class="py-3 px-4 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-download"></i> Download on APKPure
+        </a>
+        <a id="modalUptodownBtn" href="javascript:void(0)" onclick="handleAppDownloadClick('Uptodown')" class="py-3 px-4 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+          <i class="fa-brands fa-android text-base"></i> Download on Uptodown
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APPLICATION & FIREBASE SCRIPT ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      addDoc,
+      getDoc,
+      getDocs,
+      setDoc,
+      onSnapshot,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // StoreVix Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLbuS-Cm_lXS1PHPbtp1j9sTXjUV5qEv0",
+      authDomain: "storevix.firebaseapp.com",
+      projectId: "storevix",
+      storageBucket: "storevix.firebasestorage.app",
+      messagingSenderId: "109416548912",
+      appId: "1:109416548912:web:f4935b14aa9e8065ddbbf5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    // ==================== DEFAULT STORE CONFIG, LABELS & DUMMY CATALOG ====================
+    const STORE_INFO = {
+      whatsapp: "923490832576",
+      whatsappDisplay: "0349-0832576",
+      email: "contac.storevix@gmail.com",
+      address: "Baddomalhi, District Narowal, Punjab, Pakistan",
+      walletTitle: "Ghazala Zulfiqar",
+      walletNumber: "0325-4331718"
+    };
+
+    const DEFAULT_SETTINGS = {
+      deliveryFee: 200,
+      freeShippingThreshold: 2000,
+      apkpureUrl: "",
+      uptodownUrl: "",
+      flashSaleSeconds: 4 * 3600 + 28 * 60 + 15,
+      promoCodes: {
+        "STOREVIX10": { type: "percent", value: 10, label: "10% off your order" },
+        "SAVE200": { type: "flat", value: 200, label: "Rs. 200 flat discount" }
+      },
+      labels: {
+        brandName: "StoreVix",
+        brandTagline: "Baddomalhi • Pakistan",
+        topAppText: "Save More on App",
+        topSellText: "Sell on StoreVix",
+        topHelpText: "Help & Support",
+        topTrackText: "Track Order",
+        flashSaleTitle: "Flash Sale",
+        flashSaleBadge: "On Sale Now",
+        categoriesHeading: "Categories",
+        justForYouTitle: "Just For You",
+        appBoxTitle: "StoreVix Mobile App",
+        appBoxSubtitle: "Exclusive app deals & fast orders"
+      }
+    };
+
+    const CATEGORIES = [
+      { id: "electronics", name: "Electronic Devices", icon: "fa-laptop", img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80" },
+      { id: "fashion", name: "Fashion", icon: "fa-shirt", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80" },
+      { id: "health-beauty", name: "Health & Beauty", icon: "fa-sparkles", img: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=400&q=80" },
+      { id: "home-lifestyle", name: "Home & Lifestyle", icon: "fa-couch", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=400&q=80" },
+      { id: "sports", name: "Sports & Outdoor", icon: "fa-dumbbell", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=400&q=80" },
+      { id: "groceries", name: "Groceries", icon: "fa-basket-shopping", img: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80" },
+      { id: "watches", name: "Watches & Accessories", icon: "fa-clock", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80" },
+      { id: "audio", name: "Audio & Headphones", icon: "fa-headphones", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80" },
+      { id: "footwear", name: "Shoes & Footwear", icon: "fa-shoe-prints", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80" },
+      { id: "gaming", name: "Gaming Gear", icon: "fa-gamepad", img: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=400&q=80" },
+      { id: "bags", name: "Bags & Travel", icon: "fa-bag-shopping", img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80" },
+      { id: "auto-tools", name: "Tools & Auto", icon: "fa-wrench", img: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=400&q=80" }
+    ];
+
+    const HERO_SLIDES = [
+      {
+        badge: "STOREVIX MEGA SALE",
+        title: "Upgrade Your Daily Essentials at Unbeatable Prices",
+        subtitle: "Fast delivery across Pakistan with Cash on Delivery, EasyPaisa & JazzCash.",
+        cta: "Shop Flash Sale",
+        targetId: "flashSaleSection",
+        img: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1400&q=80"
+      },
+      {
+        badge: "ELECTRONICS & SMART TECH",
+        title: "Wireless Audio, Smart Watches & Everyday Gadgets",
+        subtitle: "Curated deals ready for instant dispatch from StoreVix.",
+        cta: "Explore Electronics",
+        category: "Electronic Devices",
+        img: "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1400&q=80"
+      },
+      {
+        badge: "STYLE & HOME LIVING",
+        title: "Fresh Fashion, Footwear & Home Decor Picks",
+        subtitle: "Use code STOREVIX10 at checkout for extra savings.",
+        cta: "Browse Catalog",
+        targetId: "justForYouSection",
+        img: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1400&q=80"
+      }
+    ];
+
+    // Dummy Products (can be managed/deleted/updated from Admin Firestore)
+    const DUMMY_PRODUCTS = [
+      {
+        id: "svx-p1",
+        title: "Pro Wireless ANC Bluetooth Headphones with Deep Bass",
+        price: 3490,
+        oldPrice: 5200,
+        category: "Audio & Headphones",
+        rating: 4.9,
+        reviews: 342,
+        flashSale: true,
+        soldPercent: 78,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
+        description: "Crisp stereo sound, soft cushioned earcups, long battery backup, and seamless Bluetooth pairing for phones and laptops."
+      },
+      {
+        id: "svx-p2",
+        title: "Series 9 Amoled Smart Watch with Fitness & Call Alert",
+        price: 2850,
+        oldPrice: 4100,
+        category: "Watches & Accessories",
+        rating: 4.7,
+        reviews: 215,
+        flashSale: true,
+        soldPercent: 64,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
+        description: "Sleek smartwatch featuring step tracking, heart rate monitor, notification alerts, and interchangeable straps."
+      },
+      {
+        id: "svx-p3",
+        title: "Ultra-Light Cushion Running Sneakers for Men & Women",
+        price: 2690,
+        oldPrice: 3900,
+        category: "Shoes & Footwear",
+        rating: 4.8,
+        reviews: 184,
+        flashSale: true,
+        soldPercent: 85,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80",
+        description: "Breathable mesh upper with shock-absorbing sole designed for daily walks, jogging, and casual wear."
+      },
+      {
+        id: "svx-p4",
+        title: "RGB Mechanical Gaming Keyboard & Ergonomic Mouse Combo",
+        price: 4200,
+        oldPrice: 5800,
+        category: "Gaming Gear",
+        rating: 4.9,
+        reviews: 129,
+        flashSale: true,
+        soldPercent: 52,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=600&q=80",
+        description: "Tactile responsive keys, customizable backlighting, and high-DPI gaming mouse built for smooth gameplay."
+      },
+      {
+        id: "svx-p5",
+        title: "Hydrating Vitamin C & Niacinamide Daily Skincare Serum",
+        price: 1150,
+        oldPrice: 1650,
+        category: "Health & Beauty",
+        rating: 4.6,
+        reviews: 276,
+        flashSale: true,
+        soldPercent: 71,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=600&q=80",
+        description: "Lightweight fast-absorbing serum formulated to brighten dull skin and maintain everyday moisture balance."
+      },
+      {
+        id: "svx-p6",
+        title: "Modern Minimalist Desk Lamp with Warm & Cool LED Modes",
+        price: 1790,
+        oldPrice: 2500,
+        category: "Home & Lifestyle",
+        rating: 4.8,
+        reviews: 94,
+        flashSale: true,
+        soldPercent: 60,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80",
+        description: "Eye-friendly flicker-free study and workspace lamp with touch dimming and flexible gooseneck arm."
+      },
+      {
+        id: "svx-p7",
+        title: "Premium Cotton Crew Neck T-Shirt Pack of 2",
+        price: 1450,
+        oldPrice: 2000,
+        category: "Fashion",
+        rating: 4.7,
+        reviews: 162,
+        flashSale: false,
+        soldPercent: 45,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80",
+        description: "Soft combed cotton fabric with reinforced collar stitching for all-day comfort in Pakistani weather."
+      },
+      {
+        id: "svx-p8",
+        title: "20000mAh Fast Charge Power Bank with Dual USB Output",
+        price: 3250,
+        oldPrice: 4300,
+        category: "Electronic Devices",
+        rating: 4.8,
+        reviews: 310,
+        flashSale: false,
+        soldPercent: 68,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80",
+        description: "High-capacity portable battery pack with LED indicator and built-in overcharge protection."
+      },
+      {
+        id: "svx-p9",
+        title: "Waterproof Laptop Backpack 15.6 Inch with USB Port",
+        price: 2350,
+        oldPrice: 3200,
+        category: "Bags & Travel",
+        rating: 4.7,
+        reviews: 143,
+        flashSale: false,
+        soldPercent: 50,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80",
+        description: "Padded laptop compartment, anti-theft back pocket, and water-resistant fabric for students and travelers."
+      },
+      {
+        id: "svx-p10",
+        title: "Non-Slip Exercise & Yoga Mat with Carry Strap",
+        price: 1650,
+        oldPrice: 2200,
+        category: "Sports & Outdoor",
+        rating: 4.6,
+        reviews: 88,
+        flashSale: false,
+        soldPercent: 40,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=600&q=80",
+        description: "High-density cushioning mat providing grip and joint support for home workouts, stretching, and yoga."
+      },
+      {
+        id: "svx-p11",
+        title: "Organic Roasted Arabica & Robusta Ground Coffee 250g",
+        price: 1380,
+        oldPrice: 1750,
+        category: "Groceries",
+        rating: 4.9,
+        reviews: 112,
+        flashSale: false,
+        soldPercent: 55,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80",
+        description: "Rich aromatic roasted coffee beans ground fresh for espresso makers, French press, and morning brews."
+      },
+      {
+        id: "svx-p12",
+        title: "38-Piece Precision Screwdriver & DIY Repair Tool Kit",
+        price: 1590,
+        oldPrice: 2150,
+        category: "Tools & Auto",
+        rating: 4.8,
+        reviews: 198,
+        flashSale: false,
+        soldPercent: 62,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80",
+        description: "Magnetic chrome-vanadium bits in a compact case for electronics, gadgets, eyewear, and household repairs."
+      },
+      {
+        id: "svx-p13",
+        title: "Stainless Steel Insulated Tumbler 900ml with Straw",
+        price: 1890,
+        oldPrice: 2490,
+        category: "Home & Lifestyle",
+        rating: 4.8,
+        reviews: 154,
+        flashSale: false,
+        soldPercent: 49,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80",
+        description: "Double-wall vacuum insulated flask that keeps beverages cold or hot for hours with a leak-resistant lid."
+      },
+      {
+        id: "svx-p14",
+        title: "Wireless Compact Optical Mouse 2.4GHz Silent Click",
+        price: 990,
+        oldPrice: 1400,
+        category: "Electronic Devices",
+        rating: 4.6,
+        reviews: 230,
+        flashSale: false,
+        soldPercent: 73,
+        directLink: "",
+        img: "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=600&q=80",
+        description: "Plug-and-play nano receiver with quiet buttons ideal for office work, browsing, and study desks."
+      }
+    ];
+
+    const BLOG_POSTS = [
+      {
+        id: "blog-1",
+        tag: "Shopping Guide",
+        date: "Nov 2026",
+        title: "How to Get Free Delivery & Apply Promo Codes on StoreVix",
+        excerpt: "Learn how to combine StoreVix promo codes like STOREVIX10 and reach the free delivery threshold smoothly.",
+        content: "Shopping on StoreVix is simple: add your favorite items to the cart, enter a valid promo code before checkout, and choose Cash on Delivery or mobile wallet transfer (EasyPaisa / JazzCash) to Ghazala Zulfiqar (0325-4331718). Need help? Message us on WhatsApp at 0349-0832576."
+      },
+      {
+        id: "blog-2",
+        tag: "Mobile App",
+        date: "Nov 2026",
+        title: "Installing the StoreVix Android App via APKPure & Uptodown",
+        excerpt: "Get faster access to flash sales, order tracking, and updates directly on your Android smartphone.",
+        content: "Once our APK package is published on APKPure and Uptodown, you can download and install it directly on your Android device. Check the footer or 'Save More on App' button at the top of StoreVix for the latest download links."
+      },
+      {
+        id: "blog-3",
+        tag: "Local Updates",
+        date: "Nov 2026",
+        title: "Serving Baddomalhi & Customers Across Pakistan",
+        excerpt: "StoreVix operates from Baddomalhi, District Narowal, bringing affordable products and direct WhatsApp support.",
+        content: "We focus on clear communication, honest pricing in PKR (Rs.), and responsive order updates. Every order receives a unique tracking ID so you can check its status anytime on the Track Order page."
+      }
+    ];
+
+    // ==================== STATE ====================
+    let state = {
+      products: [...DUMMY_PRODUCTS],
+      settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+      cart: JSON.parse(localStorage.getItem("storevix_cart") || "[]"),
+      appliedPromo: null,
+      selectedCategory: "All",
+      searchQuery: "",
+      sortBy: "featured",
+      visibleLimit: 12,
+      currentSlide: 0,
+      countdownRemaining: DEFAULT_SETTINGS.flashSaleSeconds,
+      currentUser: null,
+      authMode: "login",
+      activeModalProduct: null
+    };
+
+    let slideTimer = null;
+    let countdownTimer = null;
+
+    // ==================== FORMATTERS ====================
+    function formatRs(num) {
+      const n = Math.max(0, Math.round(Number(num) || 0));
+      return "Rs. " + n.toLocaleString("en-PK");
+    }
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const el = document.createElement("div");
+      const colorMap = {
+        success: "bg-emerald-600 text-white",
+        error: "bg-red-600 text-white",
+        info: "bg-gray-900 text-white"
+      };
+      el.className = `px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 transition-all duration-300 ${colorMap[type] || colorMap.info}`;
+      el.innerHTML = `<i class="fa-solid ${type === "success" ? "fa-circle-check" : type === "error" ? "fa-circle-exclamation" : "fa-circle-info"}"></i><span>${message}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(8px)";
+        setTimeout(() => el.remove(), 250);
+      }, 2800);
+    }
+
+    // ==================== APPLY DYNAMIC LABELS & SETTINGS ====================
+    function applyStoreSettings() {
+      const s = state.settings;
+      const l = s.labels || DEFAULT_SETTINGS.labels;
+
+      document.querySelectorAll("[data-label]").forEach((node) => {
+        const key = node.getAttribute("data-label");
+        if (l[key]) node.textContent = l[key];
+      });
+
+      document.title = `${l.brandName || "StoreVix"} — Online Marketplace Pakistan`;
+      document.getElementById("freeShippingStripText").textContent = `Free above ${formatRs(s.freeShippingThreshold)}`;
+
+      const promoKeys = Object.keys(s.promoCodes || {});
+      const hintEl = document.getElementById("promoBannerHint");
+      if (promoKeys.length > 0) {
+        hintEl.textContent = `Promo: ${promoKeys[0]}`;
+      } else {
+        hintEl.textContent = "";
+      }
+
+      renderCart();
+    }
+
+    // ==================== CATEGORIES RENDER ====================
+    function renderCategories() {
+      const desktopList = document.getElementById("desktopCategoryList");
+      const mobileList = document.getElementById("mobileCategoryList");
+      const pillsContainer = document.getElementById("mobileCategoryPills");
+      const gridContainer = document.getElementById("categoriesGrid");
+
+      const allItemHtml = (catName, label, iconClass) => {
+        const isActive = state.selectedCategory === catName;
+        return `
+          <li>
+            <button onclick="selectCategory('${catName.replace(/'/g, "\\'")}')" class="w-full px-4 py-2 text-left flex items-center justify-between transition ${isActive ? "bg-brand-light text-brand font-bold" : "hover:bg-brand-light hover:text-brand"}">
+              <span class="flex items-center gap-2.5 truncate">
+                <i class="fa-solid ${iconClass} w-4 text-center ${isActive ? "text-brand" : "text-ink-muted"}"></i>
+                <span class="truncate">${label}</span>
+              </span>
+              <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+          </li>
+        `;
+      };
+
+      desktopList.innerHTML =
+        allItemHtml("All", "All Products", "fa-border-all") +
+        CATEGORIES.map((c) => allItemHtml(c.name, c.name, c.icon)).join("");
+
+      mobileList.innerHTML =
+        allItemHtml("All", "All Products", "fa-border-all") +
+        CATEGORIES.map((c) => allItemHtml(c.name, c.name, c.icon)).join("");
+
+      pillsContainer.innerHTML = ["All", ...CATEGORIES.map((c) => c.name)]
+        .map((catName) => {
+          const active = state.selectedCategory === catName;
+          return `
+            <button onclick="selectCategory('${catName.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${active ? "bg-brand text-white shadow-xs" : "bg-white text-ink-primary border border-gray-200 hover:border-brand hover:text-brand"}">
+              ${catName === "All" ? "All Items" : catName}
+            </button>
+          `;
+        })
+        .join("");
+
+      gridContainer.innerHTML = CATEGORIES.map((c) => {
+        const active = state.selectedCategory === c.name;
+        return `
+          <button onclick="selectCategory('${c.name.replace(/'/g, "\\'")}')" class="group rounded-xl border p-2.5 text-center transition flex flex-col items-center justify-between aspect-square ${active ? "border-brand bg-brand-light/50 shadow-xs" : "border-gray-100 bg-[#FAFAFA] hover:border-brand hover:bg-white hover:shadow-sm"}">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center mb-1.5">
+              <img src="${c.img}" alt="${c.name}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+            </div>
+            <span class="text-[11px] sm:text-xs font-bold leading-tight line-clamp-2 ${active ? "text-brand" : "text-ink-primary group-hover:text-brand"}">
+              ${c.name}
+            </span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    // ==================== HERO SLIDER ====================
+    function renderHeroSlider() {
+      const track = document.getElementById("heroSlidesTrack");
+      const dots = document.getElementById("heroDots");
+
+      track.innerHTML = HERO_SLIDES.map((s, idx) => `
+        <div class="absolute inset-0 transition-opacity duration-500 ${idx === state.currentSlide ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"}">
+          <img src="${s.img}" alt="${s.title}" class="w-full h-full object-cover" />
+          <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-transparent flex items-center">
+            <div class="px-6 sm:px-10 max-w-xl text-white">
+              <span class="inline-block px-2.5 py-0.5 rounded bg-brand text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mb-2">
+                ${s.badge}
+              </span>
+              <h1 class="text-lg sm:text-2xl md:text-3xl font-extrabold leading-tight mb-2">
+                ${s.title}
+              </h1>
+              <p class="text-xs sm:text-sm text-gray-200 mb-4 hidden sm:block">
+                ${s.subtitle}
+              </p>
+              <button onclick="handleHeroCta(${idx})" class="px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-brand hover:bg-brand-dark text-white font-bold text-xs sm:text-sm shadow transition">
+                ${s.cta} <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      dots.innerHTML = HERO_SLIDES.map((_, idx) => `
+        <button onclick="goToSlide(${idx})" aria-label="Slide ${idx + 1}" class="h-2 rounded-full transition-all ${idx === state.currentSlide ? "w-6 bg-brand" : "w-2 bg-white/60 hover:bg-white"}"></button>
+      `).join("");
+    }
+
+    function goToSlide(index) {
+      state.currentSlide = (index + HERO_SLIDES.length) % HERO_SLIDES.length;
+      renderHeroSlider();
+      restartSlideTimer();
+    }
+
+    function nextSlide() {
+      goToSlide(state.currentSlide + 1);
+    }
+
+    function prevSlide() {
+      goToSlide(state.currentSlide - 1);
+    }
+
+    function restartSlideTimer() {
+      clearInterval(slideTimer);
+      slideTimer = setInterval(nextSlide, 5000);
+    }
+
+    function handleHeroCta(idx) {
+      const slide = HERO_SLIDES[idx];
+      if (!slide) return;
+      if (slide.category) {
+        selectCategory(slide.category);
+        scrollToProducts();
+      } else if (slide.targetId) {
+        document.getElementById(slide.targetId)?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    // ==================== FLASH SALE COUNTDOWN ====================
+    function startCountdown() {
+      clearInterval(countdownTimer);
+      updateCountdownDom();
+      countdownTimer = setInterval(() => {
+        if (state.countdownRemaining > 0) {
+          state.countdownRemaining -= 1;
+        } else {
+          state.countdownRemaining = state.settings.flashSaleSeconds || DEFAULT_SETTINGS.flashSaleSeconds;
+        }
+        updateCountdownDom();
+      }, 1000);
+    }
+
+    function updateCountdownDom() {
+      const total = Math.max(0, state.countdownRemaining);
+      const hrs = String(Math.floor(total / 3600)).padStart(2, "0");
+      const mins = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+      const secs = String(total % 60).padStart(2, "0");
+      document.getElementById("cdHours").textContent = hrs;
+      document.getElementById("cdMinutes").textContent = mins;
+      document.getElementById("cdSeconds").textContent = secs;
+    }
+
+    // ==================== PRODUCTS RENDERING (FLASH SALE + JUST FOR YOU) ====================
+    function calcDiscountPercent(price, oldPrice) {
+      const p = Number(price) || 0;
+      const o = Number(oldPrice) || 0;
+      if (o > p && o > 0) {
+        return Math.round(((o - p) / o) * 100);
+      }
+      return 0;
+    }
+
+    function renderFlashSale() {
+      const grid = document.getElementById("flashSaleGrid");
+      const section = document.getElementById("flashSaleSection");
+      let flashItems = state.products.filter((p) => p.flashSale);
+      if (flashItems.length < 6) {
+        const extras = state.products.filter((p) => !p.flashSale).slice(0, 6 - flashItems.length);
+        flashItems = [...flashItems, ...extras];
+      }
+      flashItems = flashItems.slice(0, 6);
+
+      if (flashItems.length === 0) {
+        section.classList.add("hidden");
+        return;
+      }
+      section.classList.remove("hidden");
+
+      grid.innerHTML = flashItems.map((p) => {
+        const disc = calcDiscountPercent(p.price, p.oldPrice);
+        const sold = Math.min(98, Math.max(15, Number(p.soldPercent) || 65));
+        return `
+          <div onclick="openProductModal('${p.id}')" class="cursor-pointer group rounded-xl border border-gray-100 hover:border-brand bg-white p-2.5 flex flex-col justify-between transition hover:shadow-md">
+            <div>
+              <div class="relative aspect-square rounded-lg bg-[#F9F9F9] overflow-hidden mb-2">
+                <img src="${p.img}" alt="${p.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                ${disc > 0 ? `<span class="absolute top-1.5 left-1.5 bg-brand text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded">-${disc}%</span>` : ""}
+                ${p.directLink ? `<span class="absolute top-1.5 right-1.5 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded" title="Direct Link Available"><i class="fa-solid fa-link"></i></span>` : ""}
+              </div>
+              <h3 class="text-xs font-semibold text-ink-primary line-clamp-2 group-hover:text-brand transition mb-1.5">${p.title}</h3>
+            </div>
+            <div>
+              <div class="flex items-baseline gap-1.5 flex-wrap">
+                <span class="text-sm font-extrabold text-brand">${formatRs(p.price)}</span>
+                ${p.oldPrice > p.price ? `<span class="text-[11px] text-ink-muted line-through">${formatRs(p.oldPrice)}</span>` : ""}
+              </div>
+              <div class="mt-2">
+                <div class="w-full h-2.5 rounded-full bg-brand-light overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-brand to-amber-500 rounded-full" style="width: ${sold}%"></div>
+                </div>
+                <p class="text-[10px] font-semibold text-ink-muted mt-1">${sold}% sold</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function getFilteredProducts() {
+      let list = [...state.products];
+
+      if (state.selectedCategory && state.selectedCategory !== "All") {
+        list = list.filter((p) => (p.category || "").toLowerCase() === state.selectedCategory.toLowerCase());
+      }
+
+      const q = (state.searchQuery || "").trim().toLowerCase();
+      if (q) {
+        list = list.filter(
+          (p) =>
+            (p.title || "").toLowerCase().includes(q) ||
+            (p.category || "").toLowerCase().includes(q) ||
+            (p.description || "").toLowerCase().includes(q)
+        );
+      }
+
+      if (state.sortBy === "price-asc") {
+        list.sort((a, b) => (a.price || 0) - (b.price || 0));
+      } else if (state.sortBy === "price-desc") {
+        list.sort((a, b) => (b.price || 0) - (a.price || 0));
+      } else if (state.sortBy === "rating") {
+        list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      }
+
+      return list;
+    }
+
+    function renderJustForYou() {
+      const grid = document.getElementById("productsGrid");
+      const emptyEl = document.getElementById("emptyProductsState");
+      const loadMoreWrap = document.getElementById("loadMoreWrapper");
+      const filterBadge = document.getElementById("activeFilterBadge");
+      const resetCatBtn = document.getElementById("resetCategoryBtn");
+
+      if (state.selectedCategory !== "All") {
+        filterBadge.textContent = state.selectedCategory;
+        filterBadge.classList.remove("hidden");
+        resetCatBtn.classList.remove("hidden");
+      } else {
+        filterBadge.classList.add("hidden");
+        resetCatBtn.classList.add("hidden");
+      }
+
+      const filtered = getFilteredProducts();
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        emptyEl.classList.remove("hidden");
+        loadMoreWrap.classList.add("hidden");
+        return;
+      }
+
+      emptyEl.classList.add("hidden");
+      const slice = filtered.slice(0, state.visibleLimit);
+
+      grid.innerHTML = slice.map((p) => {
+        const ratingVal = Number(p.rating || 4.8).toFixed(1);
+        const revCount = Number(p.reviews || 45);
+        return `
+          <div onclick="openProductModal('${p.id}')" class="product-card cursor-pointer bg-white rounded-xl border border-gray-100 hover:border-brand p-2.5 flex flex-col justify-between transition hover:shadow-md">
+            <div>
+              <div class="relative aspect-square rounded-lg bg-[#F9F9F9] overflow-hidden mb-2.5">
+                <img src="${p.img}" alt="${p.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                ${p.directLink ? `<span class="absolute top-1.5 right-1.5 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded"><i class="fa-solid fa-link"></i></span>` : ""}
+              </div>
+              <h3 class="text-xs sm:text-[13px] font-semibold text-ink-primary line-clamp-2 leading-snug mb-1.5">
+                ${p.title}
+              </h3>
+              <p class="text-sm sm:text-base font-extrabold text-brand mb-1">
+                ${formatRs(p.price)}
+                ${p.oldPrice > p.price ? `<span class="text-[11px] font-normal text-ink-muted line-through ml-1">${formatRs(p.oldPrice)}</span>` : ""}
+              </p>
+              <div class="flex items-center gap-1 text-[11px] text-ink-muted mb-2">
+                <i class="fa-solid fa-star text-amber-400"></i>
+                <span class="font-bold text-ink-primary">${ratingVal}/5</span>
+                <span>(${revCount})</span>
+              </div>
+            </div>
+
+            <button onclick="event.stopPropagation(); quickAddToCart('${p.id}')" class="card-hover-cta w-full py-2 rounded-lg bg-brand hover:bg-brand-dark text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+              <i class="fa-solid fa-cart-plus"></i> Add to Cart
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      if (filtered.length > state.visibleLimit) {
+        loadMoreWrap.classList.remove("hidden");
+      } else {
+        loadMoreWrap.classList.add("hidden");
+      }
+    }
+
+    function applyFilters() {
+      const input = document.getElementById("searchInput");
+      const clearBtn = document.getElementById("clearSearchBtn");
+      state.searchQuery = input.value || "";
+      state.sortBy = document.getElementById("sortSelect").value;
+      clearBtn.classList.toggle("hidden", state.searchQuery.trim().length === 0);
+      renderJustForYou();
+      renderCategories();
+    }
+
+    function clearSearch() {
+      document.getElementById("searchInput").value = "";
+      applyFilters();
+    }
+
+    function selectCategory(catName) {
+      state.selectedCategory = catName;
+      state.visibleLimit = 12;
+      switchPage("home");
+      renderCategories();
+      renderJustForYou();
+      document.getElementById("mobileCatDrawer")?.classList.add("hidden");
+      document.getElementById("mobileCatDrawerBackdrop")?.classList.add("hidden");
+    }
+
+    function resetAllFilters() {
+      state.selectedCategory = "All";
+      state.searchQuery = "";
+      state.sortBy = "featured";
+      state.visibleLimit = 12;
+      document.getElementById("searchInput").value = "";
+      document.getElementById("sortSelect").value = "featured";
+      document.getElementById("clearSearchBtn").classList.add("hidden");
+      renderCategories();
+      renderJustForYou();
+    }
+
+    function loadMoreProducts() {
+      state.visibleLimit += 12;
+      renderJustForYou();
+    }
+
+    function scrollToProducts() {
+      switchPage("home");
+      document.getElementById("justForYouSection")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function toggleMobileCatDrawer() {
+      const drawer = document.getElementById("mobileCatDrawer");
+      const backdrop = document.getElementById("mobileCatDrawerBackdrop");
+      const isHidden = drawer.classList.contains("hidden");
+      drawer.classList.toggle("hidden", !isHidden);
+      backdrop.classList.toggle("hidden", !isHidden);
+    }
+
+    // ==================== PRODUCT QUICK-VIEW MODAL ====================
+    function openProductModal(productId) {
+      const prod = state.products.find((p) => p.id === productId);
+      if (!prod) return;
+      state.activeModalProduct = prod;
+
+      document.getElementById("modalCategoryTag").textContent = prod.category || "StoreVix Item";
+      document.getElementById("modalImg").src = prod.img;
+      document.getElementById("modalImg").alt = prod.title;
+      document.getElementById("modalTitle").textContent = prod.title;
+      document.getElementById("modalRatingBadge").innerHTML = `<i class="fa-solid fa-star text-amber-500"></i> ${Number(prod.rating || 4.8).toFixed(1)}/5`;
+      document.getElementById("modalReviewsText").textContent = `(${prod.reviews || 50} reviews)`;
+      document.getElementById("modalPrice").textContent = formatRs(prod.price);
+      document.getElementById("modalDescription").textContent = prod.description || "Quality product available on StoreVix with nationwide delivery.";
+      document.getElementById("modalQtyInput").value = 1;
+
+      const oldPriceEl = document.getElementById("modalOldPrice");
+      const discBadge = document.getElementById("modalDiscountBadge");
+      const disc = calcDiscountPercent(prod.price, prod.oldPrice);
+      if (prod.oldPrice > prod.price) {
+        oldPriceEl.textContent = formatRs(prod.oldPrice);
+        oldPriceEl.classList.remove("hidden");
+      } else {
+        oldPriceEl.classList.add("hidden");
+      }
+      if (disc > 0) {
+        discBadge.textContent = `-${disc}%`;
+        discBadge.classList.remove("hidden");
+      } else {
+        discBadge.classList.add("hidden");
+      }
+
+      const linkBox = document.getElementById("modalDirectLinkBox");
+      const linkAnchor = document.getElementById("modalDirectLinkAnchor");
+      if (prod.directLink && prod.directLink.trim()) {
+        linkAnchor.href = prod.directLink.trim();
+        linkBox.classList.remove("hidden");
+      } else {
+        linkBox.classList.add("hidden");
+      }
+
+      document.getElementById("productModalBackdrop").classList.remove("hidden");
+    }
+
+    function closeProductModal() {
+      document.getElementById("productModalBackdrop").classList.add("hidden");
+      state.activeModalProduct = null;
+    }
+
+    function changeModalQty(delta) {
+      const input = document.getElementById("modalQtyInput");
+      const next = Math.min(50, Math.max(1, (parseInt(input.value, 10) || 1) + delta));
+      input.value = next;
+    }
+
+    function sanitizeModalQty() {
+      const input = document.getElementById("modalQtyInput");
+      input.value = Math.min(50, Math.max(1, parseInt(input.value, 10) || 1));
+    }
+
+    function addModalProductToCart(buyNow) {
+      if (!state.activeModalProduct) return;
+      const qty = Math.min(50, Math.max(1, parseInt(document.getElementById("modalQtyInput").value, 10) || 1));
+      addItemToCart(state.activeModalProduct, qty);
+      closeProductModal();
+      openCartDrawer();
+      if (buyNow) {
+        toggleCheckoutPanel(true);
+      }
+    }
+
+    // ==================== CART & CHECKOUT ====================
+    function saveCart() {
+      localStorage.setItem("storevix_cart", JSON.stringify(state.cart));
+    }
+
+    function quickAddToCart(productId) {
+      const prod = state.products.find((p) => p.id === productId);
+      if (!prod) return;
+      addItemToCart(prod, 1);
+      showToast(`Added "${prod.title.slice(0, 28)}..." to cart`, "success");
+    }
+
+    function addItemToCart(product, qty) {
+      const existing = state.cart.find((item) => item.id === product.id);
+      if (existing) {
+        existing.qty = Math.min(50, existing.qty + qty);
+      } else {
+        state.cart.push({
+          id: product.id,
+          title: product.title,
+          price: Number(product.price) || 0,
+          img: product.img,
+          qty: qty
+        });
+      }
+      saveCart();
+      renderCart();
+    }
+
+    function updateCartQty(productId, delta) {
+      const idx = state.cart.findIndex((i) => i.id === productId);
+      if (idx === -1) return;
+      state.cart[idx].qty += delta;
+      if (state.cart[idx].qty <= 0) {
+        state.cart.splice(idx, 1);
+      }
+      saveCart();
+      renderCart();
+    }
+
+    function removeCartItem(productId) {
+      state.cart = state.cart.filter((i) => i.id !== productId);
+      saveCart();
+      renderCart();
+    }
+
+    function applyPromoCode() {
+      const codeInput = document.getElementById("promoCodeInput");
+      const feedback = document.getElementById("promoFeedback");
+      const code = (codeInput.value || "").trim().toUpperCase();
+
+      if (!code) {
+        state.appliedPromo = null;
+        feedback.classList.add("hidden");
+        renderCart();
+        return;
+      }
+
+      const promoMap = state.settings.promoCodes || DEFAULT_SETTINGS.promoCodes;
+      const matched = promoMap[code];
+      if (!matched) {
+        state.appliedPromo = null;
+        feedback.textContent = "Invalid promo code. Try STOREVIX10 or SAVE200.";
+        feedback.className = "text-[11px] font-semibold text-red-600";
+        feedback.classList.remove("hidden");
+        renderCart();
+        return;
+      }
+
+      state.appliedPromo = { code, ...matched };
+      feedback.textContent = `Applied ${code}: ${matched.label}`;
+      feedback.className = "text-[11px] font-semibold text-emerald-600";
+      feedback.classList.remove("hidden");
+      renderCart();
+    }
+
+    function calculateCartTotals() {
+      const subtotal = state.cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1), 0);
+      let discount = 0;
+      if (state.appliedPromo && subtotal > 0) {
+        if (state.appliedPromo.type === "percent") {
+          discount = Math.round((subtotal * Number(state.appliedPromo.value || 0)) / 100);
+        } else {
+          discount = Math.min(subtotal, Number(state.appliedPromo.value || 0));
+        }
+      }
+      const afterDiscount = Math.max(0, subtotal - discount);
+      const freeThreshold = Number(state.settings.freeShippingThreshold ?? DEFAULT_SETTINGS.freeShippingThreshold);
+      const baseFee = Number(state.settings.deliveryFee ?? DEFAULT_SETTINGS.deliveryFee);
+      const deliveryFee = subtotal === 0 || afterDiscount >= freeThreshold ? 0 : baseFee;
+      const total = afterDiscount + deliveryFee;
+      return { subtotal, discount, deliveryFee, total, freeThreshold };
+    }
+
+    function renderCart() {
+      const totalCount = state.cart.reduce((s, i) => s + i.qty, 0);
+      document.getElementById("cartBadge").textContent = totalCount;
+      document.getElementById("drawerItemCount").textContent = totalCount;
+
+      const container = document.getElementById("cartItemsContainer");
+      const checkoutBtn = document.getElementById("proceedCheckoutBtn");
+      const { subtotal, discount, deliveryFee, total, freeThreshold } = calculateCartTotals();
+
+      // Free shipping progress bar
+      const pct = freeThreshold > 0 ? Math.min(100, Math.round((subtotal / freeThreshold) * 100)) : 100;
+      document.getElementById("freeShippingBar").style.width = `${pct}%`;
+      const shipText = document.getElementById("freeShippingProgressText");
+      if (subtotal === 0) {
+        shipText.textContent = `Add items worth ${formatRs(freeThreshold)} for FREE Delivery`;
+      } else if (subtotal >= freeThreshold) {
+        shipText.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Unlocked FREE Delivery!</span>`;
+      } else {
+        shipText.textContent = `Add ${formatRs(freeThreshold - subtotal)} more for FREE Delivery`;
+      }
+
+      if (state.cart.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-14 px-4">
+            <div class="w-14 h-14 rounded-full bg-brand-light text-brand flex items-center justify-center mx-auto mb-3 text-xl">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <p class="font-bold text-sm text-ink-primary mb-1">Your StoreVix cart is empty</p>
+            <p class="text-xs text-ink-muted">Explore products and add items to place an order.</p>
+          </div>
+        `;
+        checkoutBtn.disabled = true;
+        toggleCheckoutPanel(false);
+      } else {
+        checkoutBtn.disabled = false;
+        container.innerHTML = state.cart.map((item) => `
+          <div class="flex gap-3 p-2.5 rounded-xl border border-gray-100 bg-white shadow-2xs">
+            <img src="${item.img}" alt="${item.title}" class="w-16 h-16 rounded-lg object-cover bg-gray-100 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <h4 class="text-xs font-bold text-ink-primary line-clamp-2 mb-1">${item.title}</h4>
+              <p class="text-xs font-extrabold text-brand mb-2">${formatRs(item.price)}</p>
+              <div class="flex items-center justify-between">
+                <div class="inline-flex items-center border border-gray-200 rounded-lg">
+                  <button onclick="updateCartQty('${item.id}', -1)" class="px-2 py-0.5 text-xs font-bold hover:bg-gray-100">-</button>
+                  <span class="px-2.5 py-0.5 text-xs font-bold">${item.qty}</span>
+                  <button onclick="updateCartQty('${item.id}', 1)" class="px-2 py-0.5 text-xs font-bold hover:bg-gray-100">+</button>
+                </div>
+                <button onclick="removeCartItem('${item.id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      document.getElementById("cartSubtotal").textContent = formatRs(subtotal);
+      const discRow = document.getElementById("discountRow");
+      if (discount > 0) {
+        discRow.classList.remove("hidden");
+        document.getElementById("cartDiscount").textContent = `- ${formatRs(discount)}`;
+      } else {
+        discRow.classList.add("hidden");
+      }
+      document.getElementById("cartDeliveryFee").textContent = deliveryFee === 0 ? "FREE" : formatRs(deliveryFee);
+      document.getElementById("cartTotal").textContent = formatRs(total);
+    }
+
+    function openCartDrawer() {
+      document.getElementById("cartDrawer").classList.remove("hidden");
+      document.getElementById("cartDrawerBackdrop").classList.remove("hidden");
+    }
+
+    function closeCartDrawer() {
+      document.getElementById("cartDrawer").classList.add("hidden");
+      document.getElementById("cartDrawerBackdrop").classList.add("hidden");
+    }
+
+    function toggleCheckoutPanel(show) {
+      const panel = document.getElementById("checkoutFormPanel");
+      const btn = document.getElementById("proceedCheckoutBtn");
+      panel.classList.toggle("hidden", !show);
+      btn.classList.toggle("hidden", show);
+    }
+
+    function toggleWalletNote() {
+      const method = document.getElementById("custPayment").value;
+      const hint = document.getElementById("walletPaymentHint");
+      hint.classList.toggle("hidden", method !== "EasyPaisa" && method !== "JazzCash");
+    }
+
+    async function confirmCheckoutOrder() {
+      const name = (document.getElementById("custName").value || "").trim();
+      const phone = (document.getElementById("custPhone").value || "").trim();
+      const address = (document.getElementById("custAddress").value || "").trim();
+      const paymentMethod = document.getElementById("custPayment").value;
+
+      if (!name || !phone || !address) {
+        showToast("Please fill in Name, WhatsApp/Phone, and Address.", "error");
+        return;
+      }
+
+      const totals = calculateCartTotals();
+      const orderId = "SVX-" + Math.floor(1000 + Math.random() * 9000);
+      const orderPayload = {
+        orderId,
+        customerName: name,
+        customerPhone: phone,
+        customerAddress: address,
+        paymentMethod,
+        promoCode: state.appliedPromo ? state.appliedPromo.code : null,
+        items: [...state.cart],
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        deliveryFee: totals.deliveryFee,
+        total: totals.total,
+        status: "Pending",
+        userEmail: state.currentUser ? state.currentUser.email : "Guest",
+        createdAt: new Date().toISOString()
+      };
+
+      // Save locally for instant order tracking lookup
+      const localOrders = JSON.parse(localStorage.getItem("storevix_orders") || "[]");
+      localOrders.unshift(orderPayload);
+      localStorage.setItem("storevix_orders", JSON.stringify(localOrders));
+
+      // Attempt saving to Firestore
+      try {
+        await addDoc(collection(db, "orders"), {
+          ...orderPayload,
+          serverTimestamp: serverTimestamp()
+        });
+      } catch (err) {
+        console.warn("Firestore order write fallback:", err.message);
+      }
+
+      // Build WhatsApp message
+      const itemLines = orderPayload.items.map((i) => `• ${i.title} x${i.qty} (${formatRs(i.price * i.qty)})`).join("%0A");
+      const waText =
+        `*New Order on StoreVix*%0A` +
+        `Order ID: *${orderId}*%0A` +
+        `Name: ${encodeURIComponent(name)}%0A` +
+        `Phone: ${encodeURIComponent(phone)}%0A` +
+        `Address: ${encodeURIComponent(address)}%0A` +
+        `Payment: ${encodeURIComponent(paymentMethod)}%0A` +
+        `Items:%0A${itemLines}%0A` +
+        `Total: *${encodeURIComponent(formatRs(totals.total))}*`;
+
+      document.getElementById("whatsappOrderShareBtn").href = `https://wa.me/${STORE_INFO.whatsapp}?text=${waText}`;
+      document.getElementById("confirmedOrderId").textContent = orderId;
+      document.getElementById("confirmedCustomer").textContent = name;
+      document.getElementById("confirmedPayment").textContent = paymentMethod;
+      document.getElementById("confirmedTotal").textContent = formatRs(totals.total);
+
+      state.cart = [];
+      state.appliedPromo = null;
+      saveCart();
+      renderCart();
+      toggleCheckoutPanel(false);
+      closeCartDrawer();
+      document.getElementById("orderConfirmModal").classList.remove("hidden");
+    }
+
+    function closeOrderConfirmModal() {
+      document.getElementById("orderConfirmModal").classList.add("hidden");
+    }
+
+    // ==================== AUTHENTICATION (GOOGLE + EMAIL/PASSWORD) ====================
+    function openAuthModal(mode = "login") {
+      state.authMode = mode;
+      updateAuthModalUi();
+      document.getElementById("authModal").classList.remove("hidden");
+    }
+
+    function closeAuthModal() {
+      document.getElementById("authModal").classList.add("hidden");
+    }
+
+    function toggleAuthMode() {
+      state.authMode = state.authMode === "login" ? "signup" : "login";
+      updateAuthModalUi();
+    }
+
+    function updateAuthModalUi() {
+      const isLogin = state.authMode === "login";
+      document.getElementById("authModalTitle").textContent = isLogin ? "Login to StoreVix" : "Create StoreVix Account";
+      document.getElementById("authSubmitBtn").textContent = isLogin ? "Login" : "Sign Up";
+      document.getElementById("authSwitchText").textContent = isLogin ? "New to StoreVix?" : "Already have an account?";
+      document.getElementById("authSwitchBtn").textContent = isLogin ? "Create Account" : "Login";
+    }
+
+    async function signInWithGoogle() {
+      try {
+        const res = await signInWithPopup(auth, googleProvider);
+        await recordUserLogin(res.user);
+        closeAuthModal();
+        showToast(`Signed in as ${res.user.email}`, "success");
+      } catch (err) {
+        showToast(err.message || "Google sign-in failed", "error");
+      }
+    }
+
+    async function handleEmailAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById("authEmail").value.trim();
+      const pass = document.getElementById("authPassword").value;
+      try {
+        let cred;
+        if (state.authMode === "login") {
+          cred = await signInWithEmailAndPassword(auth, email, pass);
+        } else {
+          cred = await createUserWithEmailAndPassword(auth, email, pass);
+        }
+        await recordUserLogin(cred.user);
+        closeAuthModal();
+        showToast(`Welcome to StoreVix, ${cred.user.email}`, "success");
+      } catch (err) {
+        showToast(err.message || "Authentication error", "error");
+      }
+    }
+
+    async function recordUserLogin(user) {
+      if (!user || !user.email) return;
+      try {
+        const docId = encodeURIComponent(user.email.toLowerCase());
+        const ref = doc(db, "users", docId);
+        const snap = await getDoc(ref);
+        const isBlocked = snap.exists() ? Boolean(snap.data().blocked) : false;
+
+        if (isBlocked) {
+          await signOut(auth);
+          showToast("This account has been blocked by StoreVix Admin.", "error");
+          return;
+        }
+
+        await setDoc(
+          ref,
+          {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName || user.email.split("@")[0],
+            lastLogin: new Date().toISOString(),
+            blocked: false
+          },
+          { merge: true }
+        );
+      } catch (err) {
+        console.warn("User profile sync skipped:", err.message);
+      }
+    }
+
+    async function logoutUser() {
+      try {
+        await signOut(auth);
+        showToast("Logged out", "info");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      state.currentUser = user;
+      const slot = document.getElementById("authHeaderSlot");
+      if (user) {
+        slot.innerHTML = `
+          <span class="font-semibold text-ink-primary truncate max-w-[130px] sm:max-w-[180px]" title="${user.email}">${user.displayName || user.email}</span>
+          <span class="text-gray-300">|</span>
+          <button onclick="logoutUser()" class="text-brand hover:underline font-semibold">Logout</button>
+        `;
+      } else {
+        slot.innerHTML = `
+          <button onclick="openAuthModal('login')" class="hover:text-brand font-medium transition">LOGIN</button>
+          <span class="text-gray-300">|</span>
+          <button onclick="openAuthModal('signup')" class="hover:text-brand font-medium transition">SIGN UP</button>
+        `;
+      }
+    });
+
+    // ==================== APP LINKS MODAL ====================
+    function openAppModal() {
+      document.getElementById("appDownloadModal").classList.remove("hidden");
+    }
+
+    function closeAppModal() {
+      document.getElementById("appDownloadModal").classList.add("hidden");
+    }
+
+    function handleAppDownloadClick(storeName) {
+      const url = storeName === "APKPure" ? state.settings.apkpureUrl : state.settings.uptodownUrl;
+      if (url && url.trim().startsWith("http")) {
+        window.open(url.trim(), "_blank", "noopener,noreferrer");
+      } else {
+        showToast(`${storeName} app link will be live soon. You can add it anytime from Admin settings.`, "info");
+      }
+    }
+
+    // ==================== SUB-PAGES (ABOUT, CONTACT, BLOG, TRACK, SELL) ====================
+    function switchPage(pageKey) {
+      const homeView = document.getElementById("homeView");
+      const subView = document.getElementById("subpageView");
+      const crumbBar = document.getElementById("subpageBreadcrumbBar");
+      const crumbTitle = document.getElementById("breadcrumbCurrentTitle");
+      const content = document.getElementById("subpageContent");
+
+      if (pageKey === "home") {
+        homeView.classList.remove("hidden");
+        subView.classList.add("hidden");
+        crumbBar.classList.add("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      homeView.classList.add("hidden");
+      subView.classList.remove("hidden");
+      crumbBar.classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if (pageKey === "about") {
+        crumbTitle.textContent = "About StoreVix";
+        content.innerHTML = `
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 max-w-4xl mx-auto">
+            <span class="px-3 py-1 rounded-full bg-brand-light text-brand text-xs font-bold">About StoreVix</span>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-ink-primary mt-3 mb-3">Modern Online Shopping Made Simple</h1>
+            <p class="text-sm text-ink-muted leading-relaxed mb-6">
+              <strong>StoreVix</strong> operates from <strong>${STORE_INFO.address}</strong> as a dedicated online marketplace bringing everyday electronics, fashion, accessories, home goods, and lifestyle essentials together under one roof.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-xs">
+              <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                <p class="font-extrabold text-brand text-sm mb-1">Base Location</p>
+                <p class="text-ink-muted">Baddomalhi, District Narowal, Pakistan (Online Operations)</p>
+              </div>
+              <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                <p class="font-extrabold text-brand text-sm mb-1">Flexible Payments</p>
+                <p class="text-ink-muted">Cash on Delivery, Visa, Mastercard, EasyPaisa &amp; JazzCash</p>
+              </div>
+              <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                <p class="font-extrabold text-brand text-sm mb-1">Direct Support</p>
+                <p class="text-ink-muted">WhatsApp ${STORE_INFO.whatsappDisplay} &amp; ${STORE_INFO.email}</p>
+              </div>
+            </div>
+            <button onclick="switchPage('home')" class="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold text-xs sm:text-sm transition">
+              Explore StoreVix Products
+            </button>
+          </div>
+        `;
+      } else if (pageKey === "contact") {
+        crumbTitle.textContent = "Contact Us";
+        content.innerHTML = `
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+              <h1 class="text-xl sm:text-2xl font-extrabold text-ink-primary">Contact StoreVix Support</h1>
+              <p class="text-xs sm:text-sm text-ink-muted">Have a question about an order, promo code, or payment? Reach out directly.</p>
+              <div class="space-y-3 text-xs sm:text-sm">
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                  <i class="fa-brands fa-whatsapp text-2xl text-green-600"></i>
+                  <div>
+                    <p class="font-bold text-ink-primary">WhatsApp Order &amp; Help</p>
+                    <a href="https://wa.me/${STORE_INFO.whatsapp}" target="_blank" rel="noopener" class="text-brand font-semibold hover:underline">${STORE_INFO.whatsappDisplay}</a>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                  <i class="fa-solid fa-envelope text-2xl text-brand"></i>
+                  <div>
+                    <p class="font-bold text-ink-primary">Support Email</p>
+                    <p class="text-ink-muted">${STORE_INFO.email}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                  <i class="fa-solid fa-location-dot text-2xl text-brand"></i>
+                  <div>
+                    <p class="font-bold text-ink-primary">Address</p>
+                    <p class="text-ink-muted">${STORE_INFO.address}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-brand-light/60 border border-brand/20">
+                  <i class="fa-solid fa-building-columns text-2xl text-brand"></i>
+                  <div>
+                    <p class="font-bold text-ink-primary">EasyPaisa &amp; JazzCash</p>
+                    <p class="text-ink-muted">Account Title: <strong>${STORE_INFO.walletTitle}</strong> • Number: <strong>${STORE_INFO.walletNumber}</strong></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onsubmit="handleContactFormSubmit(event)" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3.5 text-xs sm:text-sm">
+              <h2 class="text-lg font-extrabold text-ink-primary">Send a Quick Message</h2>
+              <div>
+                <label class="block text-xs font-bold mb-1">Your Name</label>
+                <input id="cName" type="text" required placeholder="Enter your name" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">WhatsApp / Phone</label>
+                <input id="cPhone" type="text" required placeholder="03xx-xxxxxxx" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Message</label>
+                <textarea id="cMsg" rows="4" required placeholder="How can we help you?" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-brand"></textarea>
+              </div>
+              <button type="submit" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold transition">
+                Send via WhatsApp / Save Message
+              </button>
+            </form>
+          </div>
+        `;
+      } else if (pageKey === "blog") {
+        crumbTitle.textContent = "StoreVix Blog";
+        content.innerHTML = `
+          <div class="max-w-5xl mx-auto">
+            <div class="mb-6">
+              <h1 class="text-2xl font-extrabold text-ink-primary">StoreVix Blog &amp; Updates</h1>
+              <p class="text-xs sm:text-sm text-ink-muted">Guides, app release notes, and shopping tips.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              ${BLOG_POSTS.map((post) => `
+                <article class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between text-[11px] mb-2.5">
+                      <span class="px-2.5 py-0.5 rounded-full bg-brand-light text-brand font-bold">${post.tag}</span>
+                      <span class="text-ink-muted">${post.date}</span>
+                    </div>
+                    <h2 class="text-base font-extrabold text-ink-primary mb-2 leading-snug">${post.title}</h2>
+                    <p class="text-xs text-ink-muted leading-relaxed mb-3">${post.content}</p>
+                  </div>
+                  <button onclick="switchPage('home')" class="text-xs font-bold text-brand hover:underline text-left mt-2">
+                    Shop on StoreVix →
+                  </button>
+                </article>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      } else if (pageKey === "track") {
+        crumbTitle.textContent = "Track Order";
+        content.innerHTML = `
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-xl mx-auto">
+            <h1 class="text-xl font-extrabold text-ink-primary mb-1">Track Your StoreVix Order</h1>
+            <p class="text-xs text-ink-muted mb-4">Enter your Order ID (e.g. SVX-1234) or phone number.</p>
+            <div class="flex gap-2 mb-5">
+              <input id="trackQueryInput" type="text" placeholder="Order ID or Phone" class="flex-1 px-3.5 py-2.5 rounded-lg border border-gray-300 text-xs sm:text-sm focus:outline-none focus:border-brand" />
+              <button onclick="lookupOrder()" class="px-5 py-2.5 rounded-lg bg-brand hover:bg-brand-dark text-white font-bold text-xs sm:text-sm transition">
+                Track
+              </button>
+            </div>
+            <div id="trackResultBox" class="text-xs text-ink-muted"></div>
+          </div>
+        `;
+        lookupOrder();
+      } else if (pageKey === "sell") {
+        crumbTitle.textContent = "Sell on StoreVix";
+        content.innerHTML = `
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 max-w-3xl mx-auto">
+            <span class="px-3 py-1 rounded-full bg-brand-light text-brand text-xs font-bold">Partner Program</span>
+            <h1 class="text-2xl font-extrabold text-ink-primary mt-3 mb-2">Sell Products on StoreVix</h1>
+            <p class="text-xs sm:text-sm text-ink-muted leading-relaxed mb-5">
+              Want to list your items on StoreVix? Contact our team directly on WhatsApp or email with your product details, wholesale/retail pricing, and photos.
+            </p>
+            <div class="flex flex-wrap gap-3">
+              <a href="https://wa.me/${STORE_INFO.whatsapp}?text=${encodeURIComponent("Hello StoreVix, I want to inquire about selling products.")}" target="_blank" rel="noopener" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp StoreVix
+              </a>
+              <button onclick="switchPage('contact')" class="px-5 py-2.5 rounded-xl border border-gray-300 hover:bg-gray-50 font-bold text-xs sm:text-sm transition">
+                Contact Page
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function handleContactFormSubmit(e) {
+      e.preventDefault();
+      const n = document.getElementById("cName").value.trim();
+      const p = document.getElementById("cPhone").value.trim();
+      const m = document.getElementById("cMsg").value.trim();
+      const url = `https://wa.me/${STORE_INFO.whatsapp}?text=${encodeURIComponent(`Message from ${n} (${p}): ${m}`)}`;
+      window.open(url, "_blank", "noopener");
+      showToast("Opening WhatsApp with your message...", "success");
+    }
+
+    async function lookupOrder() {
+      const box = document.getElementById("trackResultBox");
+      if (!box) return;
+      const q = ((document.getElementById("trackQueryInput")?.value) || "").trim().toLowerCase();
+
+      let orders = JSON.parse(localStorage.getItem("storevix_orders") || "[]");
+      try {
+        const snap = await getDocs(collection(db, "orders"));
+        const cloudOrders = [];
+        snap.forEach((d) => cloudOrders.push(d.data()));
+        if (cloudOrders.length > 0) {
+          const map = new Map();
+          [...cloudOrders, ...orders].forEach((o) => {
+            if (o && o.orderId) map.set(o.orderId, o);
+          });
+          orders = Array.from(map.values());
+        }
+      } catch (_) {}
+
+      const matches = q
+        ? orders.filter((o) => (o.orderId || "").toLowerCase().includes(q) || (o.customerPhone || "").toLowerCase().includes(q))
+        : orders.slice(0, 3);
+
+      if (matches.length === 0) {
+        box.innerHTML = `<p class="p-3 rounded-lg bg-gray-50 border border-gray-100">No orders found for that query. Place an order or contact <strong>${STORE_INFO.whatsappDisplay}</strong>.</p>`;
+        return;
+      }
+
+      box.innerHTML = matches.map((o) => `
+        <div class="p-3.5 rounded-xl border border-gray-200 bg-gray-50 mb-2.5 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-brand">${o.orderId}</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[11px]">${o.status || "Pending"}</span>
+          </div>
+          <p class="text-ink-primary font-semibold">${o.customerName} • ${o.customerPhone}</p>
+          <p class="text-ink-muted">Total: <strong class="text-ink-primary">${formatRs(o.total)}</strong> (${o.paymentMethod})</p>
+        </div>
+      `).join("");
+    }
+
+    // ==================== FIRESTORE LIVE SYNC (PRODUCTS & SETTINGS) ====================
+    function listenToFirestoreData() {
+      // Products collection
+      try {
+        onSnapshot(collection(db, "products"), (snap) => {
+          if (!snap.empty) {
+            const loaded = [];
+            snap.forEach((docSnap) => {
+              loaded.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            state.products = loaded;
+            renderFlashSale();
+            renderJustForYou();
+          }
+        });
+      } catch (err) {
+        console.warn("Products listener fallback:", err.message);
+      }
+
+      // Store settings & labels doc
+      try {
+        onSnapshot(doc(db, "storeConfig", "main"), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            state.settings = {
+              ...DEFAULT_SETTINGS,
+              ...data,
+              labels: {
+                ...DEFAULT_SETTINGS.labels,
+                ...(data.labels || {})
+              },
+              promoCodes: {
+                ...DEFAULT_SETTINGS.promoCodes,
+                ...(data.promoCodes || {})
+              }
+            };
+            if (typeof data.flashSaleSeconds === "number" && data.flashSaleSeconds > 0) {
+              state.countdownRemaining = data.flashSaleSeconds;
+            }
+            applyStoreSettings();
+          }
+        });
+      } catch (err) {
+        console.warn("Store config listener fallback:", err.message);
+      }
+    }
+
+    // ==================== EXPOSE FUNCTIONS TO GLOBAL SCOPE ====================
+    Object.assign(window, {
+      switchPage,
+      openAppModal,
+      closeAppModal,
+      handleAppDownloadClick,
+      openAuthModal,
+      closeAuthModal,
+      toggleAuthMode,
+      signInWithGoogle,
+      handleEmailAuth,
+      logoutUser,
+      toggleMobileCatDrawer,
+      selectCategory,
+      applyFilters,
+      clearSearch,
+      resetAllFilters,
+      loadMoreProducts,
+      scrollToProducts,
+      goToSlide,
+      nextSlide,
+      prevSlide,
+      openProductModal,
+      closeProductModal,
+      changeModalQty,
+      sanitizeModalQty,
+      addModalProductToCart,
+      quickAddToCart,
+      updateCartQty,
+      removeCartItem,
+      applyPromoCode,
+      openCartDrawer,
+      closeCartDrawer,
+      toggleCheckoutPanel,
+      toggleWalletNote,
+      confirmCheckoutOrder,
+      closeOrderConfirmModal,
+      handleContactFormSubmit,
+      lookupOrder
+    });
+
+    // ==================== INIT ====================
+    applyStoreSettings();
+    renderCategories();
+    renderHeroSlider();
+    restartSlideTimer();
+    startCountdown();
+    renderFlashSale();
+    renderJustForYou();
+    renderCart();
+    listenToFirestoreData();
+  </script>
+</body>
+</html>
